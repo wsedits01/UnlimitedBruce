@@ -1,0 +1,57 @@
+name: Teste rf_jammer.cpp
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * *'  # Executa todo dia à meia-noite
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Clonar repositório do fork
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Pega todas as versões para evitar conflitos
+
+    - name: Configurar Git
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "actions@github.com"
+
+    - name: Sincronizar fork com repositório original
+      run: |
+        git remote add upstream https://github.com/pr3y/Bruce || echo "Upstream já existe"
+        git fetch upstream
+        git merge upstream/main --strategy-option=ours || echo "Nada para mesclar"
+
+    - name: Garantir versão correta do `rf_jammer.cpp`
+      run: git checkout origin/main -- src/modules/rf/rf_jammer.cpp
+
+    - name: Instalar PlatformIO
+      run: pip install platformio
+
+    - name: Compilar firmware
+      run: pio run -e lilygo-t-embed-cc1101
+
+    - name: Criar pasta e mover firmware compilado
+      run: |
+        mkdir -p NoLimitFirmwares
+        find .pio/build -name "*.bin" -exec cp {} NoLimitFirmwares/ \;
+
+    - name: Atualizar repositório remoto antes de enviar alterações
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: git pull --rebase https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git main || true
+
+    - name: Commit e Push das alterações
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git add NoLimitFirmwares/
+        git commit -m "Atualização automática do firmware" || echo "Nada para commit"
+        git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git HEAD:main --force
