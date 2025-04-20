@@ -47,7 +47,6 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        rm -f .github/workflows/build_parallel.yml  # Remove o arquivo problemático
         git add NoLimitFirmwares/
         git commit -m "Atualização automática do firmware" || echo "Nada para commit"
         git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git HEAD:main --force
