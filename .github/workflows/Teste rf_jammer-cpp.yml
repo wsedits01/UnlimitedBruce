@@ -52,6 +52,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        git restore .github/workflows/
         git add NoLimitFirmwares/
         git commit -m "Atualização automática do firmware" || echo "Nada para commit"
         git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git HEAD:main --force
